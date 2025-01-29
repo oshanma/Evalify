@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Your Interview</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+</head>
+<body>
+    <div class="container text-center mt-5">
+        <h1>Interview Session</h1>
+        <p>Click the button below to start recording your interview.</p>
+        <button class="btn btn-danger btn-lg" id="start-btn">Start Recording</button>
+    </div>
+    <div class="container text-center mt-5">
+        <h1>Interview Session</h1>
+        <p>Click the button below to start recording your interview.</p>
+    
+        <video id="video" autoplay></video>
+        <button class="btn btn-danger btn-lg mt-3" id="start-btn">Start Recording</button>
+        <button class="btn btn-secondary btn-lg mt-3" id="stop-btn" disabled>Stop Recording</button>
+    </div>
+    
+    <script>
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        let mediaRecorder;
+        let recordedChunks = [];
+    
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                video.srcObject = stream;
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = event => recordedChunks.push(event.data);
+                
+                startBtn.addEventListener('click', () => {
+                    recordedChunks = [];
+                    mediaRecorder.start();
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                });
+    
+                stopBtn.addEventListener('click', () => {
+                    mediaRecorder.stop();
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+    
+                    // Save video to the server
+                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                    const formData = new FormData();
+                    formData.append('video', blob);
+    
+                    fetch('/upload/', { method: 'POST', body: formData });
+                });
+            })
+            .catch(err => console.error("Error accessing camera: ", err));
+    </script>
+    
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
